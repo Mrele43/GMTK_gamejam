@@ -31,7 +31,7 @@ public class RoomManager : MonoBehaviour
                     connectorObjectArray[i].SetActive(true);
                     connectorObjectArray[i].transform.GetChild(0).gameObject.SetActive(true);
                 }
-                catch (Exception e) 
+                catch (Exception) 
                 {
                     continue;
                 }

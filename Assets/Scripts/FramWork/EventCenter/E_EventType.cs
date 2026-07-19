@@ -4,7 +4,7 @@ using UnityEngine;
 
 public enum E_EventType 
 {
-    //╪сть╫Ь╤х
+    //??
     loadProgrees
 
 

@@ -131,7 +131,7 @@ public class SleepinessManager : BaseMgr<SleepinessManager>
         // 将被动增长注册到 MonoMgr 的 Update 循环中（因为 BaseMgr 没有 Update）
         MonoMgr.Instance.AddInUpdate(OnPassiveUpdate);
         // 确保初始状态触发一次 UI 更新
-        OnSleepinessChanged?.Invoke(currentSleepiness);
+        EventCenter.Instance.EventTrigger(E_EventType.UpdateUISleepBar,currentSleepiness);
         CheckThreshold();
     }
 
@@ -152,6 +152,7 @@ public class SleepinessManager : BaseMgr<SleepinessManager>
         if (Mathf.Abs(currentSleepiness - oldValue) > 0.001f)
         {
             OnSleepinessChanged?.Invoke(currentSleepiness);
+            EventCenter.Instance.EventTrigger(E_EventType.UpdateUISleepBar,currentSleepiness);
             CheckThreshold();
         }
     }

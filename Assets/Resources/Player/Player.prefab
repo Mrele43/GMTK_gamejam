@@ -47,7 +47,7 @@ Light:
   m_Type: 0
   m_Shape: 0
   m_Color: {r: 0.9098039, g: 0.9490196, b: 1, a: 1}
-  m_Intensity: 6
+  m_Intensity: 8
   m_Range: 15
   m_SpotAngle: 45
   m_InnerSpotAngle: 16
@@ -111,7 +111,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Version: 3
   m_UsePipelineSettings: 1
-  m_AdditionalLightsShadowResolutionTier: 1
+  m_AdditionalLightsShadowResolutionTier: 2
   m_LightLayerMask: 1
   m_RenderingLayers: 1
   m_CustomShadowLayers: 0
@@ -148,7 +148,7 @@ MonoBehaviour:
   camTarget: {fileID: 0}
   horizontalSmooth: 5
   verticalSmooth: 12
-  handOffset: {x: 0, y: -0.14, z: 0}
+  handOffset: {x: 0.1, y: -0.14, z: 0}
 --- !u!1 &6384189661577485247
 GameObject:
   m_ObjectHideFlags: 0

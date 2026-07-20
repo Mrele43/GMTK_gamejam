@@ -314,6 +314,44 @@ MonoBehaviour:
   skyOcclusionIntensityMultiplier:
     m_OverrideState: 1
     m_Value: 1
+--- !u!114 &-1377983167612092690
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d6e299dc3638154bbc6de09e3382285, type: 3}
+  m_Name: Blur
+  m_EditorClassIdentifier: 
+  active: 1
+  mode:
+    m_OverrideState: 0
+    m_Value: 0
+  highQuality:
+    m_OverrideState: 0
+    m_Value: 0
+  distanceFade:
+    m_OverrideState: 0
+    m_Value: 0
+  startFadeDistance:
+    m_OverrideState: 0
+    m_Value: 0
+  endFadeDistance:
+    m_OverrideState: 0
+    m_Value: 500
+  amount:
+    m_OverrideState: 1
+    m_Value: 0
+  iterations:
+    m_OverrideState: 0
+    m_Value: 6
+  downscaling:
+    m_OverrideState: 0
+    m_Value: 2
+  shader: {fileID: 4800000, guid: fa78272576207e243bc6ec9f8a6c4f73, type: 3}
 --- !u!114 &-1216621516061285780
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -429,6 +467,8 @@ MonoBehaviour:
   - {fileID: -6288072647309666549}
   - {fileID: 7518938298396184218}
   - {fileID: 3559290382806038733}
+  - {fileID: 3479256734747203490}
+  - {fileID: -1377983167612092690}
 --- !u!114 &853819529557874667
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -516,6 +556,32 @@ MonoBehaviour:
   contribution:
     m_OverrideState: 1
     m_Value: 0.7
+--- !u!114 &3479256734747203490
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6be0f3e2e9c92846ae26c4e591cb156, type: 3}
+  m_Name: RadialBlur
+  m_EditorClassIdentifier: 
+  active: 1
+  amount:
+    m_OverrideState: 1
+    m_Value: 0
+  center:
+    m_OverrideState: 0
+    m_Value: {x: 0.5, y: 0.5}
+  angle:
+    m_OverrideState: 0
+    m_Value: 0
+  iterations:
+    m_OverrideState: 0
+    m_Value: 6
+  shader: {fileID: 4800000, guid: 4f929ddf777dcdb44aa012b2a6bb9538, type: 3}
 --- !u!114 &3559290382806038733
 MonoBehaviour:
   m_ObjectHideFlags: 3

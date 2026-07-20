@@ -10,7 +10,7 @@ public class SafeZoneState : BaseGameState
     {
         base.Enter();
         // 告诉后处理进入“被窝模式”（全屏高斯模糊 + 暗角）
-        //PostProcessManager.Instance.SetBedMode(true);
+        PostProcessManager.Instance.SetBedMode(true);
         // 暂停怪物追击（如果怪物存在）
         //context.CurrentMonster?.PauseChase();
         // UI 隐藏所有危险指示器，显示“安全”图标

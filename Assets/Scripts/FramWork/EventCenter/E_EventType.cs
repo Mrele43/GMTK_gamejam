@@ -5,7 +5,11 @@ using UnityEngine;
 public enum E_EventType 
 {
     //??
-    loadProgrees
+    loadProgrees,
+
+    //UI困意值更新
+    UpdateUISleepBar
+
 
 
 }

@@ -4,191 +4,219 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// 困意值管理器（核心压力系统）
-/// 职责：数值增减、被动增长、调节倍率、阈值事件推送、冻结控制
+/// 困意值管理器（GDD v2.0）
+/// - 无自动增长，所有变化由外部事件触发
+/// - 受击后降至0%并以5%/s恢复至受击前值
+/// - 完成全部任务后锁定100%，不可改变
 /// </summary>
-public class SleepinessManager : BaseMgr<SleepinessManager>
+public class SleepinessManager : BaseMonoMgr<SleepinessManager>
 {
-    // ---------- 私有构造（配合 BaseMgr 反射） ----------
-    private SleepinessManager() { }
+    // ---------- 事件 ----------
+    public event UnityAction<float> OnSleepinessChanged;           // 当前值变化 (0~1)
+    public event UnityAction<float> OnThresholdReached;            // 达到阈值 (参数为阈值)
+    public event UnityAction<float> OnThresholdExited;            // 脱离阈值 (参数为阈值)
+    public event UnityAction OnLocked;                             // 锁定事件
+    public event UnityAction OnRecoveryStart;                      // 开始恢复
+    public event UnityAction OnRecoveryComplete;                   // 恢复完成
 
-    // ---------- 事件定义（供 UI 和 状态机 订阅） ----------
-    /// <summary>困意值变化事件（参数：当前值 0~1）</summary>
-    public event UnityAction<float> OnSleepinessChanged;
-    /// <summary>困意值达到危险阈值事件（参数：当前值）</summary>
-    public event UnityAction<float> OnDangerThresholdReached;
-    /// <summary>困意值脱离危险阈值事件</summary>
-    public event UnityAction OnDangerThresholdExited;
+    // ---------- 配置参数 ----------
+    [Header("基础配置")]
+    [SerializeField] private float initialSleepiness = 0.2f;      // 初始值 20%
+    [SerializeField] private float maxSleepiness = 1f;            // 100%
+    [SerializeField] private float minSleepiness = 0f;            // 0%
+    [SerializeField] private float recoverySpeed = 0.05f;         // 5%/秒
 
-    // ---------- 核心数值 ----------
-    private float currentSleepiness = 0f;
-    public float CurrentSleepiness => currentSleepiness;
-
-    // ---------- 配置参数（可序列化，方便调参） ----------
-    [Header("基础增长配置")]
-    public float basePassiveRate = 0.015f;   // 每秒自然增长（约 67 秒从 0 涨到 1）
-    public float dangerThreshold = 0.75f;    // 危险阈值（触发 Chase）
-
-    [Header("调节倍率")]
-    public float medicationMultiplier = 2.5f; // 服药后增长加速倍率
-    public float radioMultiplier = 0.3f;     // 听收音机时增长减速倍率（降到 30%）
+    [Header("阈值配置")]
+    [SerializeField] private float thresholdLivingRoom = 0.7f;    // 70%
+    [SerializeField] private float thresholdBathroom = 0.8f;      // 80%
+    [SerializeField] private float thresholdBedroom = 0.9f;       // 90%
 
     // ---------- 运行时状态 ----------
-    private bool isFrozen = false;           // 是否冻结增长（被窝安全区）
-    private float currentMultiplier = 1f;    // 当前综合倍率（1 = 正常）
-    private bool wasDangerous = false;       // 上一帧是否处于危险状态（用于边缘触发事件）
+    private float currentSleepiness;
+    private float recoveryTarget;          // 受击前值，恢复目标
+    private bool isRecovering = false;
+    private bool isLocked = false;         // 锁定状态
 
-    // ---------- 外部调节接口（供任务、药物、收音机调用） ----------
+    // ---------- 公开属性 ----------
+    public float CurrentSleepiness => currentSleepiness;
+    public bool IsLocked => isLocked;
+    public bool IsRecovering => isRecovering;
+
+    // ---------- 初始化 ----------
+    protected override void OnInit()
+    {
+        base.OnInit();
+        currentSleepiness = Mathf.Clamp(initialSleepiness, minSleepiness, maxSleepiness);
+        isRecovering = false;
+        isLocked = false;
+        recoveryTarget = 0f;
+        OnSleepinessChanged?.Invoke(currentSleepiness);
+        CheckAllThresholds();
+        Debug.Log($"SleepinessManager 初始化，初始值: {currentSleepiness:P0}");
+    }
+
+    // ---------- Update 驱动恢复 ----------
+    private void Update()
+    {
+        // 处理受击恢复
+        if (isRecovering && !isLocked)
+        {
+            // 恢复速度：每秒 recoverySpeed (5%)
+            float delta = recoverySpeed * Time.deltaTime;
+            currentSleepiness = Mathf.Min(currentSleepiness + delta, recoveryTarget);
+
+            OnSleepinessChanged?.Invoke(currentSleepiness);
+            CheckAllThresholds();
+
+            if (Mathf.Approximately(currentSleepiness, recoveryTarget))
+            {
+                isRecovering = false;
+                OnRecoveryComplete?.Invoke();
+                Debug.Log($"困意恢复完成，当前值: {currentSleepiness:P0}");
+            }
+        }
+    }
+
+    // ---------- 核心修改接口 ----------
 
     /// <summary>
-    /// 直接修改困意值（用于任务完成增加、药物加速、收音机减速）
+    /// 修改困意值（通用接口）
+    /// 正数增加，负数减少
+    /// 锁定状态下无效
+    /// 恢复过程中允许修改，但不会超过恢复目标
     /// </summary>
-    /// <param name="amount">正数增加困意，负数减少困意</param>
     public void ModifySleepiness(float amount)
     {
-        if (isFrozen) return; // 被窝里冻结一切数值变化（策划案要求）
+        if (isLocked)
+        {
+            Debug.LogWarning("困意已锁定，无法修改");
+            return;
+        }
 
         float oldValue = currentSleepiness;
-        currentSleepiness = Mathf.Clamp01(currentSleepiness + amount);
-        
-        if (!Mathf.Approximately(oldValue, currentSleepiness))
-        {
-            OnSleepinessChanged?.Invoke(currentSleepiness);
-            CheckThreshold();
-        }
-    }
+        float newValue = currentSleepiness + amount;
 
-    /// <summary>
-    /// 强制重置困意值为 0（被怪物袭击后清空）
-    /// </summary>
-    public void ResetSleepiness()
-    {
-        float oldValue = currentSleepiness;
-        currentSleepiness = 0f;
-        if (!Mathf.Approximately(oldValue, currentSleepiness))
+        // 如果正在恢复，限制不能超过 recoveryTarget
+        if (isRecovering)
         {
-            OnSleepinessChanged?.Invoke(currentSleepiness);
-            CheckThreshold();
-        }
-    }
-
-    /// <summary>
-    /// 服用助眠药：加速困意增长（持续 10 秒）
-    /// </summary>
-    public void TakeMedication()
-    {
-        // 用 TimerMgr 创建一个 10 秒的临时倍率覆盖
-        int timerId = TimerMgr.Instance.CreatTimeItem(
-            false, 
-            () => { currentMultiplier = 1f; }, // 结束回调：恢复默认倍率
-            10000, // 10秒 = 10000ms
-            null,
-            0
-        );
-        
-        // 立即应用倍率（如果当前有其他倍率，叠加计算）
-        currentMultiplier = medicationMultiplier;
-        Debug.Log($"服用助眠药，困意增长加速至 {medicationMultiplier}x，持续 10 秒");
-    }
-
-    /// <summary>
-    /// 打开收音机：降低/延缓困意增长（持续开启期间一直有效，由状态机开关）
-    /// </summary>
-    public void SetRadioMode(bool isOn)
-    {
-        if (isOn)
-        {
-            // 收音机开启：降低倍率（注意：如果吃药中，叠加效果？采用乘法叠加避免极端）
-            // 这里策略是：降低基础倍率，但保留药物效果（更合理）
-            currentMultiplier = radioMultiplier;
-            Debug.Log($"打开收音机，困意增长减缓至 {radioMultiplier}x");
+            newValue = Mathf.Clamp(newValue, minSleepiness, recoveryTarget);
         }
         else
         {
-            // 关闭收音机：恢复为正常（如果有药物效果则恢复为药物倍率，简化处理直接恢复 1）
-            // 实际生产中可设计为栈式覆盖，这里简单恢复 1
-            currentMultiplier = 1f;
-            Debug.Log("关闭收音机，困意增长恢复正常");
+            newValue = Mathf.Clamp(newValue, minSleepiness, maxSleepiness);
         }
-    }
 
-    // ---------- 冻结控制（由 SafeZoneState 调用） ----------
-
-    /// <summary>
-    /// 冻结/解冻困意变化（被窝专用）
-    /// </summary>
-    public void SetFrozen(bool frozen)
-    {
-        isFrozen = frozen;
-        Debug.Log($"困意系统 {(frozen ? "已冻结" : "已解冻")}");
-    }
-
-    // ---------- 生命周期（由 MonoMgr 驱动） ----------
-
-    // 初始化方法（在 GameManager.Awake 中调用一次）
-    public void Initialize()
-    {
-        // 将被动增长注册到 MonoMgr 的 Update 循环中（因为 BaseMgr 没有 Update）
-        MonoMgr.Instance.AddInUpdate(OnPassiveUpdate);
-        // 确保初始状态触发一次 UI 更新
-        EventCenter.Instance.EventTrigger(E_EventType.UpdateUISleepBar,currentSleepiness);
-        CheckThreshold();
-    }
-
-    // 被动增长循环（每帧执行）
-    private void OnPassiveUpdate()
-    {
-        // 如果冻结 或 已经满了，不增长
-        if (isFrozen || currentSleepiness >= 1f) return;
-
-        // 计算增量：基础速率 * 当前综合倍率 * Time.deltaTime
-        float delta = basePassiveRate * currentMultiplier * Time.deltaTime;
-        if (delta <= 0) return;
-
-        float oldValue = currentSleepiness;
-        currentSleepiness = Mathf.Clamp01(currentSleepiness + delta);
-
-        // 数值变化超过 0.001 才触发事件（防止高频无意义刷新）
-        if (Mathf.Abs(currentSleepiness - oldValue) > 0.001f)
+        if (!Mathf.Approximately(oldValue, newValue))
         {
+            currentSleepiness = newValue;
             OnSleepinessChanged?.Invoke(currentSleepiness);
-            EventCenter.Instance.EventTrigger(E_EventType.UpdateUISleepBar,currentSleepiness);
-            CheckThreshold();
+            CheckAllThresholds();
         }
     }
-
-    // ---------- 阈值检测（内部逻辑） ----------
-
-    private void CheckThreshold()
-    {
-        bool isDangerous = currentSleepiness >= dangerThreshold;
-
-        // 刚进入危险区
-        if (isDangerous && !wasDangerous)
-        {
-            wasDangerous = true;
-            OnDangerThresholdReached?.Invoke(currentSleepiness);
-            Debug.Log($"?? 困意值达到 {currentSleepiness:F2}，触发危险阈值！");
-        }
-        // 刚脱离危险区
-        else if (!isDangerous && wasDangerous)
-        {
-            wasDangerous = false;
-            OnDangerThresholdExited?.Invoke();
-            Debug.Log($"? 困意值降至 {currentSleepiness:F2}，脱离危险区");
-        }
-    }
-
-    // ---------- 清理（防止内存泄漏） ----------
 
     /// <summary>
-    /// 场景切换或游戏结束时调用
+    /// 受击处理（由怪物攻击调用）
     /// </summary>
+    public void TakeDamageEffect()
+    {
+        // 如果锁定状态，只触发事件但不改变数值（但扣命由外部处理）
+        if (isLocked)
+        {
+            Debug.Log("受击时困意已锁定，不发生变化");
+            return;
+        }
+
+        // 记录受击前值作为恢复目标
+        recoveryTarget = currentSleepiness;
+        // 立即降至0%
+        currentSleepiness = 0f;
+        isRecovering = true;
+
+        OnSleepinessChanged?.Invoke(currentSleepiness);
+        CheckAllThresholds();
+        OnRecoveryStart?.Invoke();
+
+        Debug.Log($"受击！困意降至0%，开始恢复至 {recoveryTarget:P0}");
+    }
+
+    /// <summary>
+    /// 锁定困意值为最大值（完成全部任务时调用）
+    /// </summary>
+    public void LockAtMax()
+    {
+        if (isLocked) return;
+
+        isLocked = true;
+        currentSleepiness = maxSleepiness;
+        isRecovering = false; // 停止恢复
+
+        OnSleepinessChanged?.Invoke(currentSleepiness);
+        CheckAllThresholds();
+        OnLocked?.Invoke();
+
+        Debug.Log("困意锁定100%");
+    }
+
+    /// <summary>
+    /// 重置困意（新一天开始时调用）
+    /// </summary>
+    public void ResetForNewDay()
+    {
+        isLocked = false;
+        isRecovering = false;
+        currentSleepiness = initialSleepiness;
+        recoveryTarget = 0f;
+        OnSleepinessChanged?.Invoke(currentSleepiness);
+        CheckAllThresholds();
+        Debug.Log($"新一天，困意重置为 {currentSleepiness:P0}");
+    }
+
+    // ---------- 阈值检测 ----------
+    private void CheckAllThresholds()
+    {
+
+        EventCenter.Instance.EventTrigger(E_EventType.UpdateUISleepBar, currentSleepiness);
+        // 检测三个阈值是否达到
+        CheckThreshold(thresholdLivingRoom, "客厅");
+        CheckThreshold(thresholdBathroom, "厕所");
+        CheckThreshold(thresholdBedroom, "卧室");
+    }
+
+    // 检测单个阈值（每次变化时触发，但只触发一次进入/离开）
+    private float lastThresholdValue = -1f; // 用于记录上次阈值状态（简化：用三个bool字段）
+    private bool[] thresholdReached = new bool[3]; // 0客厅,1厕所,2卧室
+
+    private void CheckThreshold(float threshold, string name)
+    {
+        int index = -1;
+        if (Mathf.Approximately(threshold, thresholdLivingRoom)) index = 0;
+        else if (Mathf.Approximately(threshold, thresholdBathroom)) index = 1;
+        else if (Mathf.Approximately(threshold, thresholdBedroom)) index = 2;
+        if (index < 0) return;
+
+        bool reached = currentSleepiness >= threshold;
+        if (reached && !thresholdReached[index])
+        {
+            thresholdReached[index] = true;
+            OnThresholdReached?.Invoke(threshold);
+            Debug.Log($"达到阈值 {threshold:P0}，唤醒{name}怪物");
+        }
+        else if (!reached && thresholdReached[index])
+        {
+            thresholdReached[index] = false;
+            OnThresholdExited?.Invoke(threshold);
+            Debug.Log($"脱离阈值 {threshold:P0}，{name}怪物休眠");
+        }
+    }
+
+    // ---------- 清空事件（场景切换时） ----------
     public void Cleanup()
     {
-        MonoMgr.Instance.RemoveInUpdate(OnPassiveUpdate);
         OnSleepinessChanged = null;
-        OnDangerThresholdReached = null;
-        OnDangerThresholdExited = null;
+        OnThresholdReached = null;
+        OnThresholdExited = null;
+        OnLocked = null;
+        OnRecoveryStart = null;
+        OnRecoveryComplete = null;
     }
 }

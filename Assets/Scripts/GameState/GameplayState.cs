@@ -33,7 +33,11 @@ public class GameplayState : BaseGameState
             return;
         }
 
-        // 2. 任务全部完成 → Win
+        // 更新任务进度
+        TaskManager.Instance.UpdateTasks();
+
+        // 检测生命、任务完成、被窝等切换条件...
+        // 注意：任务完成切换现已由 TaskManager 事件驱动，可保留轮询作为兜底
         if (context.TaskMgr.IsAllTasksCompleted)
         {
             context.StateMachine.SetState<WinState>();

@@ -28,8 +28,6 @@ public abstract class basePlane : MonoBehaviour
     }
 
 
-    
-
     protected abstract void Init();
 
     public virtual void HideMe(UnityAction callUnit)
@@ -39,7 +37,7 @@ public abstract class basePlane : MonoBehaviour
         HideCallBack = callUnit;
     }
 
-    public void ShwoMe()
+    public virtual void ShwoMe()
     {
         canvasGroup.alpha = 0;
         isHide = false;

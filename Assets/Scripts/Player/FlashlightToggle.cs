@@ -20,8 +20,7 @@ public class FlashlightToggle : MonoBehaviour
 
     void Update()
     {
-        // 鼠标左键切换手电筒开关
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetMouseButtonDown(1))
         {
             ToggleFlashlight();
         }

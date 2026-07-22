@@ -135,6 +135,7 @@ public class PostProcessManager : BaseMgr<PostProcessManager>
         else
         {
             targetBlurAmount = 0f;
+            targetVignetteIntensity = 0f;
             // 离开被窝后，Vignette 和色差由 SetSleepinessEffects 重新接管
         }
     }

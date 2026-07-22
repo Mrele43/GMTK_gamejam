@@ -35,7 +35,7 @@ public class UIManager
             return panalDic[panelName] as T;
 
         //显示面板，动态创建面板
-        GameObject panelObj = GameObject.Instantiate(Resources.Load<GameObject>("UI/" + panelName));
+        GameObject panelObj = GameObject.Instantiate(Resources.Load<GameObject>("UI/Panel/" + panelName));
         panelObj.transform.SetParent(canvasTrans, false);
 
         //存储面板获得逻辑

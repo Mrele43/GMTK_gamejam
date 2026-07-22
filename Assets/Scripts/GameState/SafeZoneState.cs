@@ -9,38 +9,48 @@ public class SafeZoneState : BaseGameState
     public override void Enter()
     {
         base.Enter();
-        // 告诉后处理进入“被窝模式”（全屏高斯模糊 + 暗角）
+
+        // 应用被窝视觉效果
         PostProcessManager.Instance.SetBedMode(true);
-        // 暂停怪物追击（如果怪物存在）
-        //context.CurrentMonster?.PauseChase();
-        // UI 隐藏所有危险指示器，显示“安全”图标
+
+        // 如果存在活跃怪物，让它消失（被窝绝对安全）
+        // if (context.CurrentMonster != null && context.CurrentMonster.IsActive)
+        // {
+        //     context.CurrentMonster.Deactivate();
+        //     context.CurrentMonster = null;
+        // }
+
+        // 禁用玩家移动和交互（除了与床交互）
+        context.Player.EnableControl(false);
+
+        Debug.Log("进入被窝，困意以每秒2%速度降低");
     }
 
     public override void Update()
     {
         base.Update();
 
-        // 检测玩家是否离开被窝（碰撞器 Exit 事件会设置 IsInBed = false）
-        // if (!context.IsInBed)
-        // {
-        //     // 恢复困意增长，关闭被窝特效
-        //     PostProcessManager.Instance.SetBedMode(false);
-        //     // 如果困意依然很高，可能回到 Chase
-        //     if (context.SleepinessMgr.CurrentSleepiness >= 0.75f && context.CurrentMonster != null)
-        //     {
-        //         context.StateMachine.SetState<ChaseState>();
-        //     }
-        //     else
-        //     {
-        //         context.StateMachine.SetState<GameplayState>();
-        //     }
-        // }
+        // 持续降低困意：-2%/秒
+        if (!SleepinessManager.Instance.IsLocked)
+        {
+            SleepinessManager.Instance.ModifySleepiness(-0.02f * Time.deltaTime);
+        }
+
+        // 注意：不再检测玩家是否离开被窝，由 BedTrigger 控制退出
+        // 当玩家按E离开被窝时，会调用 PlayerController.ExitBed()
+        // 然后 GameManager 会触发状态切换
     }
 
     public override void Exit()
     {
         base.Exit();
-        // 确保退出时关闭被窝特效（保险）
-        //PostProcessManager.Instance.SetBedMode(false);
+
+        // 关闭被窝视觉效果
+        PostProcessManager.Instance.SetBedMode(false);
+
+        // 恢复玩家控制和交互
+        context.Player.EnableControl(true);
+
+        Debug.Log("退出被窝");
     }
 }

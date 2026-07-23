@@ -33,6 +33,8 @@ public class PlayerController : MonoBehaviour
     public Camera PlayerCamera => playerCamera;
     public bool IsInBed { get; private set; }
 
+    public bool IsMakingNoise { get; private set; }
+
     // 内部引用
     private GameManager gameManager;
 
@@ -217,6 +219,15 @@ public class PlayerController : MonoBehaviour
         if (interactionEnabled && Input.GetKeyDown(KeyCode.Q))
         {
             DropCurrentItem();
+        }
+
+        var input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
+
+        IsMakingNoise = input.sqrMagnitude > 0f;
+
+        if (!IsMakingNoise)
+        {
+            return;
         }
     }
 

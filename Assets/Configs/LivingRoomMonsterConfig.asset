@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d38f8dc4521c8748a62b86e91edae77, type: 3}
+  m_Name: LivingRoomMonsterConfig
+  m_EditorClassIdentifier: 
+  monsterName: "\u8863\u67B6\u602A"
+  monsterID: MON_01
+  roomName: "\u5BA2\u5385"
+  awakeningThreshold: 70
+  dormantItemName: "\u8863\u67B6"
+  designTheme: "\u88AB\u6CE8\u89C6\u7684\u6050\u60E7"
+  fearType: "\u88AB\u6CE8\u89C6"
+  gameplayRole: "\u8FFD\u9010\u578B"
+  patrolSpeed: 2
+  chaseSpeed: 5
+  sightRange: 12
+  fovAngle: 120
+  hearingRange: 5
+  hearOnlyMovingPlayer: 1
+  useVision: 1
+  useHearing: 1
+  useFlashlightDetection: 1
+  flashlightRange: 8
+  useSleepinessDetection: 1
+  useFixedEventDetection: 1
+  attackRange: 2
+  attackRangeHysteresis: 0.4
+  attackDamage: 15
+  attackCooldown: 1.5
+  attackTurnSpeed: 360
+  searchDuration: 8
+  loseTargetDuration: 4
+  repathInterval: 0.2
+  hasAttackWarning: 1
+  attackWarningDuration: 0.5
+  canPlayerEscapeByRunning: 1
+  canDoorBlockMonster: 1
+  canFlashlightCounter: 0
+  canEnterChildRoom: 0
+  canAttackUnderCovers: 0
+  returnToPatrolAfterAttack: 1
+  idleAnimation: {fileID: 0}
+  patrolAnimation: {fileID: 0}
+  chaseAnimation: {fileID: 0}
+  attackAnimation: {fileID: 0}
+  awakeningAnimation: {fileID: 0}
+  deathAnimation: {fileID: 0}

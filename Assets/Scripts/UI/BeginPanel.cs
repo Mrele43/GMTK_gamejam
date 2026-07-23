@@ -14,7 +14,7 @@ public class BeginPanel : basePlane
     {
         startBtn.onClick.AddListener(() =>
         {
-            SceneMgr.Instance.LoadScene("LowPolyInterior_Demo");
+            SceneMgr.Instance.LoadSceneAsync("LowPolyInterior_Demo");
         });
 
         settingBtn.onClick.AddListener(() =>

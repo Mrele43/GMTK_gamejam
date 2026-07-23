@@ -17,19 +17,14 @@ MonoBehaviour:
     audioName: walk
     clip: {fileID: 8300000, guid: 85115e4cb9ba400429a0cdc4f1f0195d, type: 3}
     type: 2
-    defaultVolume: 0
+    defaultVolume: 1
   - audioId: 1
     audioName: water
     clip: {fileID: 8300000, guid: bb87b87b4ab423442b89739a5cf38a5e, type: 3}
     type: 0
-    defaultVolume: 0
+    defaultVolume: 1
   - audioId: 2
     audioName: bed
     clip: {fileID: 8300000, guid: bec20bb68ed2f3c4492a44c1fb98854b, type: 3}
     type: 2
-    defaultVolume: 0
-  - audioId: 0
-    audioName: 
-    clip: {fileID: 0}
-    type: 0
-    defaultVolume: 0
+    defaultVolume: 1

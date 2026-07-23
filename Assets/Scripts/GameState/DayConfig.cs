@@ -8,6 +8,6 @@ public class DayConfig : ScriptableObject
     public int dayNumber;
     public string dayTitle;
     public List<TaskData> tasks;
-    //public List<MonsterSpawnConfig> monsterConfigs;
+    public List<MonsterReplacementData> monsterReplacements;
     public AudioClip dayIntroSound;
 }

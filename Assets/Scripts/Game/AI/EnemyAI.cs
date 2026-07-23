@@ -82,6 +82,14 @@ public class EnemyAI : MonoBehaviour
 
     public MonsterConfig Config => _config;
 
+    public event System.Action OnMonsterDeactivated;  // 外部订阅
+
+    private GameManager _gameManager;
+    private PlayerController _playerController;
+
+    // 用于视线检测的缓存
+    private float _lookCheckTimer;
+
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
@@ -134,6 +142,79 @@ public class EnemyAI : MonoBehaviour
                 _agent.Warp(transform.position);
             }
         }
+    }
+
+    public void SetConfig(MonsterConfig config)
+    {
+        _config = config;
+    }
+
+    public void SetPlayer(PlayerController player)
+    {
+        _playerController = player;
+        PlayerTarget = player?.transform;
+    }
+
+    public void SetGameManager(GameManager gm)
+    {
+        _gameManager = gm;
+    }
+
+    /// <summary>
+    /// 设置为“等待玩家注视”状态（由替换管理器调用）
+    /// </summary>
+    public void SetStateToWaiting()
+    {
+        if (IsDead) return;
+        ChangeState<WaitingState>("spawned, waiting for gaze");
+    }
+
+    /// <summary>
+    /// 重置到休眠状态（怪物消失时）
+    /// </summary>
+    public void ResetToDormant()
+    {
+        IsDead = false;
+        IsAwake = false;
+        SetModelActive(false);
+        ChangeState<DormantState>("reset to dormant");
+    }
+
+    /// <summary>
+    /// 判断玩家是否正在看向怪物（用于 WaitingState）
+    /// </summary>
+    public bool IsPlayerLookingAtMe()
+    {
+        if (PlayerTarget == null || _config == null) return false;
+
+        Vector3 toPlayer = PlayerTarget.position - transform.position;
+        toPlayer.y = 0f;
+        float sqrDist = toPlayer.sqrMagnitude;
+        if (sqrDist > _config.sightRange * _config.sightRange) return false;
+
+        // 角度检测
+        if (Vector3.Angle(transform.forward, toPlayer) > _config.fovAngle * 0.5f) return false;
+
+        // 射线检测遮挡
+        RaycastHit hit;
+        Vector3 origin = PlayerTarget.position + Vector3.up * 0.5f;
+        Vector3 dir = (transform.position - origin).normalized;
+        float distance = Vector3.Distance(origin, transform.position);
+
+        if (Physics.Raycast(origin, dir, out hit, distance, _detectionLayers))
+        {
+            return hit.transform == transform || hit.transform.IsChildOf(transform);
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// 怪物消失（攻击后或被窝触发）
+    /// </summary>
+    public void Deactivate()
+    {
+        OnMonsterDeactivated?.Invoke();
+        ResetToDormant();
     }
 
     private bool MoveToPosition(Vector3 targetPosition, float speed)
@@ -467,6 +548,36 @@ public class EnemyAI : MonoBehaviour
         public virtual void Update() { }
         public virtual void FixedUpdate() { }
         public virtual void Exit() { }
+    }
+
+    private sealed class WaitingState : EnemyStateBase
+    {
+        public WaitingState(EnemyAI owner) : base(owner) { }
+
+        public override void Enter()
+        {
+            Owner._agent.isStopped = true;
+            Owner._agent.ResetPath();
+            Owner.SetIsWalking(false);
+            Owner.SetModelActive(true); // 显示怪物模型
+                                        // 可播放待机动画
+            Owner.PlayAnimation("Idle");
+            Debug.Log($"[EnemyAI] {Owner.name} 进入等待玩家注视状态");
+        }
+
+        public override void Update()
+        {
+            // 检测玩家注视
+            if (Owner.IsPlayerLookingAtMe())
+            {
+                Owner.ChangeState<AlertState>("player is looking at me!");
+            }
+        }
+
+        public override void Exit()
+        {
+            Owner._agent.isStopped = false;
+        }
     }
 
     private sealed class DormantState : EnemyStateBase
@@ -847,10 +958,7 @@ public class EnemyAI : MonoBehaviour
                 //    SleepinessManager.Instance.OnDamageTaken();
                 //}
 
-                if (Owner._config.returnToPatrolAfterAttack)
-                {
-                    Owner.ChangeState<ReturnState>("attack completed, returning");
-                }
+                Owner.Deactivate();
             }
         }
 

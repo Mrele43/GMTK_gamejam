@@ -10,7 +10,7 @@ public class GameContext
 
     public PlayerController Player { get; set; }
     public PostProcessManager PostProcessMgr { get; set; }
-    //public MonsterAI CurrentMonster { get; set; }
+    public EnemyAI CurrentMonster { get; set; }
     public bool IsInBed { get; set; }
     public int Lives { get; set; }
 

@@ -38,13 +38,25 @@ void Awake()
         Debug.LogWarning("未找到 Player 对象，已自动创建临时替代");
     }
 
-    // ----- 5. 初始化怪物生成管理器 -----
-    // var spawnMgr = MonsterSpawnManager.Instance;
-    // if (initialConfig != null && initialConfig.monsterConfigs != null)
-    //     spawnMgr.ApplyDayConfig(initialConfig);
+        // ----- 5. 初始化怪物生成管理器 -----
+        // 获取替换管理器并应用配置
+        var replacementMgr = MonsterReplacementManager.Instance;
+        if (initialConfig != null && initialConfig.monsterReplacements != null)
+        {
+            // 由于配置中已包含数据，我们可以直接设置到管理器的列表
+            // 但管理器是在 Inspector 中配置的，所以如果使用 ScriptableObject 配置，
+            // 需要将配置数据复制到管理器。这里简单演示：直接使用管理器的字段，在 Inspector 中配置。
+            // 或者通过代码清空并添加。
+            // 我们提供一个公共方法 SetReplacements
+            replacementMgr.SetReplacements(initialConfig.monsterReplacements);
+        }
 
-    // ----- 6. 初始化任务管理器 -----
-    if (initialConfig != null)
+        // 订阅事件，更新 context
+        replacementMgr.OnMonsterActivated += (ai) => { context.CurrentMonster = ai; };
+        replacementMgr.OnMonsterDeactivated += (ai) => { context.CurrentMonster = null; };
+
+        // ----- 6. 初始化任务管理器 -----
+        if (initialConfig != null)
         taskMgr.InitializeFromDayConfig(initialConfig);
 
     // ----- 7. 填充上下文 -----

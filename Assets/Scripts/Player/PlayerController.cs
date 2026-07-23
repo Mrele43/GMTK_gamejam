@@ -287,6 +287,27 @@ public class PlayerController : MonoBehaviour
     }
 
     public Vector3 GetPosition() => transform.position;
+
+    // 【新增公开属性】供洗碗机读取玩家手持物品
+    public IItem CurrentHoldItem => currentItem;
+
+    /// <summary>
+    /// 【新增方法】直接移除并销毁手持物品（用于放入容器/上交，无掉落动画）
+    /// </summary>
+    public void ConsumeCurrentItem()
+    {
+        if (currentItem == null) return;
+    
+        GameObject itemObj = currentItem.GetGameObject();
+        if (itemObj != null)
+        {
+            Destroy(itemObj);
+        }
+    
+        currentItem = null;
+        currentItemModel = null;
+        Debug.Log("已上交手持物品");
+    }    
 }
 
 // 接口定义（如未在其他地方定义）

@@ -12,7 +12,7 @@ public class BedTrigger : MonoBehaviour, IInteractable
     [SerializeField] private string enterBedTip = "按E钻被窝";
     [SerializeField] private string exitBedTip = "按E离开被窝";
     [SerializeField] private string sleepTip = "按E上床睡觉";
-    [SerializeField] private string lockedTip = "真得睡觉了";
+    //[SerializeField] private string lockedTip = "真得睡觉了";
 
     private Collider bedCollider;
     private PlayerController cachedPlayer;

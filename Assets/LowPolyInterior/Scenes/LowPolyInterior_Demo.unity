@@ -10351,7 +10351,7 @@ MonoBehaviour:
   priority: 0
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: ab09877e2e707104187f6f83e2f62510, type: 2}
+  sharedProfile: {fileID: 11400000, guid: 0f8b6a534074fae48839d6d188b40ef4, type: 2}
 --- !u!1001 &596323432
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21065,6 +21065,58 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 823392407144175420, guid: 4074e3cdd8bd7c344bfe67b5d4d7ec43, type: 3}
   m_PrefabInstance: {fileID: 1240036140}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1242888791
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1242888793}
+  - component: {fileID: 1242888792}
+  m_Layer: 0
+  m_Name: AudioMgr
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1242888792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242888791}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cae854b1ed2049a43b9fa9ce2ce9dbc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: 43d922008caa43b4fa5965b30e9ffe14, type: 2}
+  _masterVolume: 0.8
+  _bgmVolume: 0.8
+  _voiceVolume: 0.8
+  _sfxVolume: 0.8
+  defaultFadeIn: 0.5
+  defaultFadeOut: 0.5
+  sfxPoolSize: 8
+--- !u!4 &1242888793
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242888791}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 12.652473, y: -4.675175, z: 3.1148112}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1244832268
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -37437,3 +37489,4 @@ SceneRoots:
   - {fileID: 6987487100510076440}
   - {fileID: 691792283}
   - {fileID: 1735975973}
+  - {fileID: 1242888793}

@@ -61,6 +61,7 @@ public class PlayerController : MonoBehaviour
         if (IsInBed) return;
         IsInBed = true;
         gameManager?.PlayerEnterBed();
+        AudioMgr.Instance.PlaySFX(2); // 播放上床音效
         Debug.Log("玩家进入被窝");
     }
 

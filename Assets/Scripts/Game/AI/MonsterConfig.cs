@@ -68,6 +68,9 @@ public class MonsterConfig : ScriptableObject
     [Tooltip("是否使用固定事件感知")]
     public bool useFixedEventDetection = true;
 
+    [Tooltip("玩家打开手电且处于怪物视野中时是否转回休眠")]
+    public bool returnToDormantOnFlashlight = true;
+
     [Header("Attack")]
     [Tooltip("攻击距离")]
     public float attackRange = 1.8f;

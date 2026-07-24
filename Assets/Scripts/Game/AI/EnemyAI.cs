@@ -112,8 +112,8 @@ public class EnemyAI : MonoBehaviour
 
     private void Start()
     {
-        SetModelActive(true);
-        ChangeState<IdleState>("spawned");
+        SetModelActive(false);
+        ChangeState<DormantState>("spawned");
     }
 
     private void Update()
@@ -503,6 +503,18 @@ public class EnemyAI : MonoBehaviour
 
         public override void Update()
         {
+            if (Owner._config.returnToDormantOnFlashlight && Owner.CanDetectFlashlight)
+            {
+                Owner.ChangeState<DormantState>("flashlight detected during awakening");
+                return;
+            }
+
+            if (!Owner.CanSenseSleepiness)
+            {
+                Owner.ChangeState<DormantState>("sleepiness dropped below threshold");
+                return;
+            }
+
             if (Owner._stateTimer.HasElapsed(_awakeningDuration))
             {
                 Owner.ChangeState<IdleState>("awakening animation finished");
@@ -512,7 +524,7 @@ public class EnemyAI : MonoBehaviour
 
     private sealed class IdleState : EnemyStateBase
     {
-        private float _idleDuration;
+        private bool _hasEnteredPlayerView;
 
         public IdleState(EnemyAI owner) : base(owner) { }
 
@@ -521,14 +533,58 @@ public class EnemyAI : MonoBehaviour
             Owner._agent.isStopped = true;
             Owner._agent.ResetPath();
             Owner.SetIsWalking(false);
-            _idleDuration = Random.Range(1f, 3f);
+            _hasEnteredPlayerView = false;
         }
 
         public override void Update()
         {
-            if (Owner.CanSeePlayer || Owner.CanHearPlayer)
+            if (Owner._config.returnToDormantOnFlashlight && Owner.CanDetectFlashlight)
             {
-                Owner.ChangeState<AlertState>("detected player while idle");
+                Owner.ChangeState<DormantState>("flashlight detected while idle");
+                return;
+            }
+
+            if (!Owner.CanSenseSleepiness)
+            {
+                Owner.ChangeState<DormantState>("sleepiness dropped below threshold");
+                return;
+            }
+
+            if (Owner.CanSeePlayer)
+            {
+                if (!_hasEnteredPlayerView)
+                {
+                    _hasEnteredPlayerView = true;
+                    Owner._agent.isStopped = false;
+                    Owner._agent.speed = Owner._config.patrolSpeed * 0.5f;
+                    Owner.SetIsWalking(true);
+                }
+
+                if (Owner.PlayerTarget != null)
+                {
+                    if (Owner._agent.isOnNavMesh)
+                    {
+                        Owner._agent.SetDestination(Owner.PlayerTarget.position);
+                    }
+                    else
+                    {
+                        Owner.MoveToPosition(Owner.PlayerTarget.position, Owner._config.patrolSpeed * 0.5f);
+                    }
+
+                    float distanceToPlayer = Vector3.Distance(
+                        Owner.transform.position, Owner.PlayerTarget.position);
+
+                    if (distanceToPlayer <= Owner._config.attackRange)
+                    {
+                        Owner.ChangeState<AttackState>("player in attack range");
+                    }
+                }
+                return;
+            }
+
+            if (Owner.CanHearPlayer)
+            {
+                Owner.ChangeState<AlertState>("heard player while idle");
                 return;
             }
 
@@ -538,9 +594,10 @@ public class EnemyAI : MonoBehaviour
                 return;
             }
 
-            if (Owner._stateTimer.HasElapsed(_idleDuration))
+            if (_hasEnteredPlayerView && !Owner.CanSeePlayer)
             {
-                Owner.ChangeState<PatrolState>("idle finished");
+                Owner._agent.isStopped = true;
+                Owner.SetIsWalking(false);
             }
         }
 
@@ -567,9 +624,27 @@ public class EnemyAI : MonoBehaviour
 
         public override void Update()
         {
-            if (Owner.CanSeePlayer || Owner.CanHearPlayer)
+            if (Owner._config.returnToDormantOnFlashlight && Owner.CanDetectFlashlight)
             {
-                Owner.ChangeState<AlertState>("detected player while patrolling");
+                Owner.ChangeState<DormantState>("flashlight detected while patrolling");
+                return;
+            }
+
+            if (!Owner.CanSenseSleepiness)
+            {
+                Owner.ChangeState<DormantState>("sleepiness dropped below threshold");
+                return;
+            }
+
+            if (Owner.CanSeePlayer)
+            {
+                Owner.ChangeState<AlertState>("saw player while patrolling");
+                return;
+            }
+
+            if (Owner.CanHearPlayer)
+            {
+                Owner.ChangeState<AlertState>("heard player while patrolling");
                 return;
             }
 
@@ -628,9 +703,49 @@ public class EnemyAI : MonoBehaviour
 
         public override void Update()
         {
-            if (Owner.CanSeePlayer || Owner.CanHearPlayer)
+            if (Owner._config.returnToDormantOnFlashlight && Owner.CanDetectFlashlight)
             {
-                Owner.ChangeState<ChaseState>("confirmed player location");
+                Owner.ChangeState<DormantState>("flashlight detected while alert");
+                return;
+            }
+
+            if (!Owner.CanSenseSleepiness)
+            {
+                Owner.ChangeState<DormantState>("sleepiness dropped below threshold");
+                return;
+            }
+
+            if (Owner.CanSeePlayer)
+            {
+                Owner._agent.isStopped = false;
+                Owner._agent.speed = Owner._config.chaseSpeed;
+                Owner.SetIsWalking(true);
+
+                if (Owner.PlayerTarget != null)
+                {
+                    if (Owner._agent.isOnNavMesh)
+                    {
+                        Owner._agent.SetDestination(Owner.PlayerTarget.position);
+                    }
+                    else
+                    {
+                        Owner.MoveToPosition(Owner.PlayerTarget.position, Owner._config.chaseSpeed);
+                    }
+
+                    float distanceToPlayer = Vector3.Distance(
+                        Owner.transform.position, Owner.PlayerTarget.position);
+
+                    if (distanceToPlayer <= Owner._config.attackRange)
+                    {
+                        Owner.ChangeState<AttackState>("player in attack range");
+                    }
+                }
+                return;
+            }
+
+            if (Owner.CanHearPlayer)
+            {
+                Owner.ChangeState<ChaseState>("confirmed player location by sound");
                 return;
             }
 
@@ -663,6 +778,18 @@ public class EnemyAI : MonoBehaviour
 
         public override void Update()
         {
+            if (Owner._config.returnToDormantOnFlashlight && Owner.CanDetectFlashlight)
+            {
+                Owner.ChangeState<DormantState>("flashlight detected while chasing");
+                return;
+            }
+
+            if (!Owner.CanSenseSleepiness)
+            {
+                Owner.ChangeState<DormantState>("sleepiness dropped below threshold");
+                return;
+            }
+
             if (!Owner.IsWithinActivityRegion())
             {
                 Owner.ChangeState<ReturnState>("chase exceeded activity region");
@@ -680,7 +807,7 @@ public class EnemyAI : MonoBehaviour
 
             if (_timeSinceContact >= Owner._config.loseTargetDuration)
             {
-                Owner.ChangeState<SearchState>(
+                Owner.ChangeState<ReturnState>(
                     $"lost player for {Owner._config.loseTargetDuration:F0}s");
                 return;
             }
@@ -742,6 +869,18 @@ public class EnemyAI : MonoBehaviour
 
         public override void Update()
         {
+            if (Owner._config.returnToDormantOnFlashlight && Owner.CanDetectFlashlight)
+            {
+                Owner.ChangeState<DormantState>("flashlight detected while searching");
+                return;
+            }
+
+            if (!Owner.CanSenseSleepiness)
+            {
+                Owner.ChangeState<DormantState>("sleepiness dropped below threshold");
+                return;
+            }
+
             if (!Owner.IsWithinActivityRegion())
             {
                 Owner.ChangeState<ReturnState>("search exceeded activity region");
@@ -811,6 +950,18 @@ public class EnemyAI : MonoBehaviour
 
         public override void Update()
         {
+            if (Owner._config.returnToDormantOnFlashlight && Owner.CanDetectFlashlight)
+            {
+                Owner.ChangeState<DormantState>("flashlight detected while attacking");
+                return;
+            }
+
+            if (!Owner.CanSenseSleepiness)
+            {
+                Owner.ChangeState<DormantState>("sleepiness dropped below threshold");
+                return;
+            }
+
             if (Owner.PlayerTarget == null)
             {
                 Owner.ChangeState<ChaseState>("attack target vanished");
@@ -841,11 +992,10 @@ public class EnemyAI : MonoBehaviour
                 Owner.TriggerAttack();
                 Debug.Log($"[EnemyAI] {Owner.name} attacks the player for {Owner._config.attackDamage} damage!");
 
-                //TODO: Implement actual damage application to the player here.
-                //if (SleepinessManager.Instance != null)
-                //{
-                //    SleepinessManager.Instance.OnDamageTaken();
-                //}
+                if (SleepinessManager.Instance != null)
+                {
+                    SleepinessManager.Instance.TakeDamageEffect();
+                }
 
                 if (Owner._config.returnToPatrolAfterAttack)
                 {
@@ -886,6 +1036,18 @@ public class EnemyAI : MonoBehaviour
 
         public override void Update()
         {
+            if (Owner._config.returnToDormantOnFlashlight && Owner.CanDetectFlashlight)
+            {
+                Owner.ChangeState<DormantState>("flashlight detected while returning");
+                return;
+            }
+
+            if (!Owner.CanSenseSleepiness)
+            {
+                Owner.ChangeState<DormantState>("sleepiness dropped below threshold");
+                return;
+            }
+
             if (Owner.CanSeePlayer || Owner.CanHearPlayer)
             {
                 Owner.ChangeState<ChaseState>("detected player while returning");
@@ -896,7 +1058,7 @@ public class EnemyAI : MonoBehaviour
             {
                 if (!Owner._agent.pathPending && Owner._agent.remainingDistance <= Owner._waypointTolerance)
                 {
-                    Owner.ChangeState<PatrolState>("returned to patrol area");
+                    Owner.ChangeState<IdleState>("returned to patrol area");
                 }
             }
             else
@@ -904,7 +1066,7 @@ public class EnemyAI : MonoBehaviour
                 bool reached = Owner.MoveToPosition(Owner.GetInitialPosition(), Owner._config.patrolSpeed);
                 if (reached)
                 {
-                    Owner.ChangeState<PatrolState>("returned to patrol area (manual)");
+                    Owner.ChangeState<IdleState>("returned to patrol area (manual)");
                 }
             }
         }

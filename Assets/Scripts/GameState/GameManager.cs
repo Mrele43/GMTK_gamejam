@@ -105,6 +105,7 @@ void Awake()
         context.CurrentDay = newDay;
         context.CurrentDayConfig = DayManager.Instance.GetCurrentDayConfig();
         context.Lives = 3; // 新一天满血
+        EventCenter.Instance.EventTrigger(E_EventType.UpdateHPUI, context.Lives);
 
         // 重置所有怪物（还原物品）
         MonsterReplacementManager.Instance?.DebugDespawnAllMonsters();
@@ -191,6 +192,8 @@ void Awake()
     {
         context.Lives--;
         Debug.Log($"玩家受伤，剩余生命: {context.Lives}");
+        EventCenter.Instance.EventTrigger(E_EventType.UpdateHPUI, context.Lives);
+
 
         // 受击时掉落手中物品（由 PlayerController 处理）
         context.Player?.DropCurrentItem();

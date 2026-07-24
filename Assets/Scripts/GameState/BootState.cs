@@ -22,6 +22,7 @@ public class BootState : BaseGameState
 
         // 1. 重置玩家生命（满血3条）
         context.Lives = 3;
+        EventCenter.Instance.EventTrigger(E_EventType.UpdateHPUI, context.Lives);
 
         // 2. 重置困意（初始值20%）
         SleepinessManager.Instance.ResetForNewDay();

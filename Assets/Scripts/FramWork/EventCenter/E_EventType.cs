@@ -14,6 +14,7 @@ public enum E_EventType
     ShowInteractTxt,
     //UI交互提示更新
     UpdateInteractTip,
+    UpdateHPUI
 
 
 

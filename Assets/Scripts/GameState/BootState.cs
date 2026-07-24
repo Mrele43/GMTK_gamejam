@@ -10,18 +10,19 @@ public class BootState : BaseGameState
 {
     public BootState(GameContext ctx) : base(ctx) { }
 
-    private bool isInitialized = false;
-
     public override void Enter()
     {
         base.Enter();
-        isInitialized = false;
+        // 清除所有怪物
+        MonsterReplacementManager.Instance?.DebugDespawnAllMonsters();
+        context.CurrentMonster = null;
 
         // 8. 显示UI（主界面 + 当天标题）
         ShowDayUI();
 
         // 1. 重置玩家生命（满血3条）
         context.Lives = 3;
+        EventCenter.Instance.EventTrigger(E_EventType.UpdateHPUI, context.Lives);
 
         // 2. 重置困意（初始值20%）
         SleepinessManager.Instance.ResetForNewDay();
@@ -37,17 +38,7 @@ public class BootState : BaseGameState
         }
 
         // 4. 初始化任务管理器（加载当天任务列表）
-         TaskManager.Instance.InitializeFromDayConfig(config);
-
-        // // 5. 初始化怪物生成管理器（加载当天怪物配置）
-        // MonsterSpawnManager.Instance.ApplyDayConfig(config);
-
-        // // 6. 清除残留怪物
-        // if (context.CurrentMonster != null)
-        // {
-        //     context.CurrentMonster.Deactivate();
-        //     context.CurrentMonster = null;
-        // }
+        TaskManager.Instance.InitializeFromDayConfig(config);
 
         // 7. 确保玩家不在被窝
         context.IsInBed = false;

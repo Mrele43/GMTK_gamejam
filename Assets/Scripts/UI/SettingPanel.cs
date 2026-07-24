@@ -7,7 +7,7 @@ using System.Reflection;
 
 public class SettingPanel : basePlane
 {
-        [Header("BGM")]
+    [Header("BGM")]
     [SerializeField] private Toggle bgmToggle;
     [SerializeField] private Slider bgmSlider;
     [Header("SFX")]

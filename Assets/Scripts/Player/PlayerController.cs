@@ -61,6 +61,7 @@ public class PlayerController : MonoBehaviour
         if (IsInBed) return;
         IsInBed = true;
         gameManager?.PlayerEnterBed();
+        AudioMgr.Instance.PlaySFX(2); // 播放上床音效
         Debug.Log("玩家进入被窝");
     }
 
@@ -194,6 +195,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+
+        if (Time.timeScale == 0f) return;
         // --- 交互检测（E键拾取/互动） ---
         bool hasValidTarget = RaycastInteractable(out RaycastHit hit, out Outline outline, out IInteractable interactable);
         UpdateOutline(outline);

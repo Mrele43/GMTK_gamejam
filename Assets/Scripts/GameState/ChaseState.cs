@@ -14,15 +14,7 @@ public class ChaseState : BaseGameState
         //UIMgr.Instance.ShowPanel<WarningPanel>(E_UILayerType.system);
 
         // 禁用玩家交互（任务交互、拾取物品等），但保留移动/视角控制
-        context.Player.EnableInteraction(false);
-
-        // 如果怪物不存在或已失活，则立即切回游戏状态（防御性）
-        // if (context.CurrentMonster == null || !context.CurrentMonster.IsActive)
-        // {
-        //     Debug.LogWarning("ChaseState 进入时怪物已消失，切回 Gameplay");
-        //     context.StateMachine.SetState<GameplayState>();
-        //     return;
-        // }
+        //context.Player.EnableInteraction(false);
 
         // 确保怪物已进入追击模式（MonsterAI 内部已自动切换，无需额外调用）
         Debug.Log("进入追击状态，怪物正在追逐玩家...");
@@ -46,13 +38,6 @@ public class ChaseState : BaseGameState
             return;
         }
 
-        // 3. 怪物已消失（攻击命中后自动失活） → 脱离追击
-        // if (context.CurrentMonster == null || !context.CurrentMonster.IsActive)
-        // {
-        //     // 如果玩家存活，回到正常游戏状态
-        //     context.StateMachine.SetState<GameplayState>();
-        //     return;
-        // }
     }
 
     public override void Exit()

@@ -48,7 +48,7 @@ public abstract class basePlane : MonoBehaviour
     {
         if (isHide && canvasGroup.alpha != 0 )
         {
-            canvasGroup.alpha -= alphaSpeed * Time.deltaTime;
+            canvasGroup.alpha -= alphaSpeed * Time.unscaledDeltaTime;
             if (canvasGroup.alpha <= 0 )
             {
                 canvasGroup.alpha = 0;
@@ -59,7 +59,7 @@ public abstract class basePlane : MonoBehaviour
         }
         else if (!isHide && canvasGroup.alpha != 1)
         {
-            canvasGroup.alpha += alphaSpeed * Time.deltaTime;
+            canvasGroup.alpha += alphaSpeed * Time.unscaledDeltaTime;
             if (canvasGroup.alpha > 1)
             {
                 canvasGroup.alpha = 1;

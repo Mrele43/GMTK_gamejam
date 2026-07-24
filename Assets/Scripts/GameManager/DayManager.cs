@@ -84,7 +84,10 @@ public class DayManager : BaseMonoMgr<DayManager>
     public bool AdvanceToNextDay()
     {
         if (currentDay >= maxDays)
+        {
+            OnAllDaysCompleted?.Invoke();
             return false;
+        }
 
         currentDay++;
         OnDayChanged?.Invoke(currentDay);

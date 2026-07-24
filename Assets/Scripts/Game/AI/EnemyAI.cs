@@ -770,6 +770,7 @@ public class EnemyAI : MonoBehaviour
             Owner.SetIsWalking(true);
             _timeSinceContact = 0f;
             _nextRepathTime = 0f;
+            Owner._gameManager?.TriggerChaseState();   // 新增
         }
 
         public override void Update()

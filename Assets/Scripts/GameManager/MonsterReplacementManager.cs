@@ -205,4 +205,79 @@ public class MonsterReplacementManager : BaseMonoMgr<MonsterReplacementManager>
                 RestoreItemFromMonster(data);
         }
     }
+
+    #if UNITY_EDITOR
+private void Update()
+{
+    // 数字键 1-3 分别生成对应房间怪物
+    if (Input.GetKeyDown(KeyCode.Alpha1))
+        DebugSpawnMonster(RoomType.LivingRoom);
+    if (Input.GetKeyDown(KeyCode.Alpha2))
+        DebugSpawnMonster(RoomType.Bathroom);
+    if (Input.GetKeyDown(KeyCode.Alpha3))
+        DebugSpawnMonster(RoomType.Bedroom);
+    
+    // 数字键 0 生成所有怪物
+    if (Input.GetKeyDown(KeyCode.Alpha0))
+        DebugSpawnAllMonsters();
+    
+    // Backspace 键消除所有怪物（还原物品）
+    if (Input.GetKeyDown(KeyCode.Backspace))
+        DebugDespawnAllMonsters();
+    
+    // 数字键 9 重置所有（用于快速重启测试场景）
+    if (Input.GetKeyDown(KeyCode.Alpha9))
+        DebugResetAll();
+}
+#endif
+
+// ---- 调试接口 ----
+
+public void DebugSpawnMonster(RoomType room)
+{
+    var data = _replacements.Find(d => d.room == room);
+    if (data == null)
+    {
+        Debug.LogWarning($"未找到 {room} 的怪物配置");
+        return;
+    }
+    if (data.isActive)
+    {
+        Debug.Log($"{room} 怪物已激活");
+        return;
+    }
+    ReplaceItemWithMonster(data);
+}
+
+public void DebugDespawnMonster(RoomType room)
+{
+    var data = _replacements.Find(d => d.room == room);
+    if (data == null || !data.isActive) return;
+    RestoreItemFromMonster(data);
+}
+
+public void DebugSpawnAllMonsters()
+{
+    foreach (var data in _replacements)
+    {
+        if (!data.isActive)
+            ReplaceItemWithMonster(data);
+    }
+}
+
+public void DebugDespawnAllMonsters()
+{
+    foreach (var data in _replacements)
+    {
+        if (data.isActive)
+            RestoreItemFromMonster(data);
+    }
+}
+
+public void DebugResetAll()
+{
+    DebugDespawnAllMonsters();
+    // 可重置困意等其他状态
+    SleepinessManager.Instance?.ResetForNewDay();
+}
 }

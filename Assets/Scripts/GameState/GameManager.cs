@@ -38,26 +38,10 @@ void Awake()
         Debug.LogWarning("未找到 Player 对象，已自动创建临时替代");
     }
 
-        // ----- 5. 初始化怪物生成管理器 -----
-        // 获取替换管理器并应用配置
-        var replacementMgr = MonsterReplacementManager.Instance;
-        if (initialConfig != null && initialConfig.monsterReplacements != null)
-        {
-            // 由于配置中已包含数据，我们可以直接设置到管理器的列表
-            // 但管理器是在 Inspector 中配置的，所以如果使用 ScriptableObject 配置，
-            // 需要将配置数据复制到管理器。这里简单演示：直接使用管理器的字段，在 Inspector 中配置。
-            // 或者通过代码清空并添加。
-            // 我们提供一个公共方法 SetReplacements
-            replacementMgr.SetReplacements(initialConfig.monsterReplacements);
-        }
 
-        // 订阅事件，更新 context
-        replacementMgr.OnMonsterActivated += (ai) => { context.CurrentMonster = ai; };
-        replacementMgr.OnMonsterDeactivated += (ai) => { context.CurrentMonster = null; };
-
-        // ----- 6. 初始化任务管理器 -----
-        if (initialConfig != null)
-        taskMgr.InitializeFromDayConfig(initialConfig);
+    // ----- 6. 初始化任务管理器 -----
+    if (initialConfig != null)
+    taskMgr.InitializeFromDayConfig(initialConfig);
 
     // ----- 7. 填充上下文 -----
     context = new GameContext
@@ -72,6 +56,26 @@ void Awake()
         CurrentDay = dayMgr.CurrentDay,
         MaxDays = dayMgr.MaxDays,
         CurrentDayConfig = initialConfig
+    };
+
+    // ----- 7. 初始化怪物替换管理器（订阅事件） -----
+    var replacementMgr = MonsterReplacementManager.Instance;
+    // 订阅：怪物出现在场景（等待注视）时只记录引用，不切换状态
+    replacementMgr.OnMonsterActivated += (ai) =>
+    {
+        context.CurrentMonster = ai;
+        Debug.Log($"怪物 {ai.name} 出现在场景中");
+    };
+    // 订阅：怪物消失时，如果当前处于 ChaseState，则切回 GameplayState
+    replacementMgr.OnMonsterDeactivated += (ai) =>
+    {
+        context.CurrentMonster = null;
+        Debug.Log("怪物消失，还原物品");
+        // 如果当前状态是 ChaseState，切回 GameplayState
+        if (gameStateMachine.CurrentState is ChaseState)
+        {
+            gameStateMachine.SetState<GameplayState>();
+        }
     };
 
     // ----- 8. 订阅事件 -----
@@ -101,6 +105,10 @@ void Awake()
         context.CurrentDay = newDay;
         context.CurrentDayConfig = DayManager.Instance.GetCurrentDayConfig();
         context.Lives = 3; // 新一天满血
+
+        // 重置所有怪物（还原物品）
+        MonsterReplacementManager.Instance?.DebugDespawnAllMonsters();
+        context.CurrentMonster = null;
 
         // 更新任务和怪物配置（由 DayTransitionState 处理）
         Debug.Log($"GameManager 响应天变化: 第 {newDay} 天");
@@ -139,8 +147,7 @@ void Awake()
         TaskManager.Instance?.Cleanup();
         PostProcessManager.Instance?.Cleanup();
         DayManager.Instance?.Cleanup();
-        //MonsterSpawnManager.Instance?.Cleanup();
-
+        MonsterReplacementManager.Instance?.Cleanup();
         Debug.Log("GameManager 清理完成");
     }
 
@@ -199,18 +206,14 @@ void Awake()
     /// </summary>
     public void AdvanceToNextDay()
     {
+        // 先还原所有怪物
+        MonsterReplacementManager.Instance?.DebugDespawnAllMonsters();
+        context.CurrentMonster = null;
         if (DayManager.Instance.AdvanceToNextDay())
         {
             // 更新上下文（OnDayChanged 会处理，但这里再手动确保）
             context.CurrentDay = DayManager.Instance.CurrentDay;
             context.CurrentDayConfig = DayManager.Instance.GetCurrentDayConfig();
-
-            // 重置怪物
-            // if (context.CurrentMonster != null)
-            // {
-            //     context.CurrentMonster.Deactivate();
-            //     context.CurrentMonster = null;
-            // }
 
             // 进入天过渡
             context.StateMachine.SetState<DayTransitionState>();
@@ -227,17 +230,13 @@ void Awake()
     /// </summary>
     public void RestartCurrentDay()
     {
+        // 还原所有怪物
+        MonsterReplacementManager.Instance?.DebugDespawnAllMonsters();
+        context.CurrentMonster = null;
         DayManager.Instance.RestartCurrentDay();
 
         // 重置生命
         context.Lives = 3;
-
-        // 重置怪物
-        // if (context.CurrentMonster != null)
-        // {
-        //     context.CurrentMonster.Deactivate();
-        //     context.CurrentMonster = null;
-        // }
 
         // 确保玩家不在被窝
         context.IsInBed = false;
@@ -276,17 +275,9 @@ void Awake()
     /// </summary>
     public string GetCurrentStateName() =>
         gameStateMachine.CurrentState?.GetType().Name ?? "Null";
-
+    
     /// <summary>
     /// 获取当前怪物引用（供其他脚本使用）
     /// </summary>
-    //public MonsterBase GetCurrentMonster() => context.CurrentMonster;
-
-    /// <summary>
-    /// 设置当前怪物（由 MonsterSpawnManager 调用）
-    /// </summary>
-    // public void SetCurrentMonster(MonsterBase monster)
-    // {
-    //     context.CurrentMonster = monster;
-    // }
+    public EnemyAI GetCurrentMonster() => context.CurrentMonster;
 }

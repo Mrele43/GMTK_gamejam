@@ -13,12 +13,9 @@ public class SafeZoneState : BaseGameState
         // 应用被窝视觉效果
         PostProcessManager.Instance.SetBedMode(true);
 
-        // 如果存在活跃怪物，让它消失（被窝绝对安全）
-        // if (context.CurrentMonster != null && context.CurrentMonster.IsActive)
-        // {
-        //     context.CurrentMonster.Deactivate();
-        //     context.CurrentMonster = null;
-        // }
+        // 清除所有怪物（被窝绝对安全）
+        MonsterReplacementManager.Instance?.DebugDespawnAllMonsters();
+        context.CurrentMonster = null;
 
         // 禁用玩家移动和交互（除了与床交互）
         context.Player.EnableControl(false);

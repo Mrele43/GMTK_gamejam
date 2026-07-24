@@ -7,6 +7,8 @@ public class GameManager : MonoBehaviour
     private StateMachine gameStateMachine;
     private GameContext context;
 
+    private bool isPaused = false;
+
     // ==================== 初始化 ====================
 
 void Awake()
@@ -126,12 +128,25 @@ void Awake()
 
     void Update()
     {
-        gameStateMachine?.Update();
+                // 处理 ESC 暂停
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause(!isPaused);
+        }
+
+        // 只有未暂停时才驱动状态机
+        if (!isPaused)
+        {
+            gameStateMachine?.Update();
+        }
     }
 
     void FixedUpdate()
     {
-        gameStateMachine?.FixedUpdate();
+        if (!isPaused)
+        {
+            gameStateMachine?.FixedUpdate();
+        }
     }
 
     void OnDestroy()
@@ -150,6 +165,65 @@ void Awake()
         DayManager.Instance?.Cleanup();
         MonsterReplacementManager.Instance?.Cleanup();
         Debug.Log("GameManager 清理完成");
+    }
+
+    /// <summary>
+    /// 切换暂停状态
+    /// </summary>
+    public void TogglePause(bool pause)
+    {
+        if (pause == isPaused) return;
+        isPaused = pause;
+
+        Time.timeScale = isPaused ? 0f : 1f;
+
+        if (isPaused)
+        {
+            // 显示暂停面板（在 System 层级）
+            UIManager.Instance.ShowPanel<PausePanel>();
+            // 解锁鼠标光标（方便点击UI）
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            // 隐藏暂停面板
+            UIManager.Instance.HidePanel<PausePanel>();
+            // 恢复鼠标锁定
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
+    /// <summary>
+    /// 重新开始游戏（新游戏）
+    /// </summary>
+    public void RestartGame()
+    {
+        // 如果暂停，先恢复
+        if (isPaused)
+        {
+            TogglePause(false);
+        }
+
+        // 重置所有管理器
+        DayManager.Instance.ResetToDay1();
+        SleepinessManager.Instance.ResetForNewDay();
+        TaskManager.Instance.ResetAllTasks();
+
+        // 重置怪物（消除所有怪物）
+        MonsterReplacementManager.Instance?.DebugDespawnAllMonsters();
+        context.CurrentMonster = null;
+
+        // 重置玩家状态
+        context.Lives = 3;
+        context.IsInBed = false;
+        context.Player?.EnableControl(true);
+        context.Player?.EnableInteraction(true);
+
+        // 重置状态机到 BootState
+        gameStateMachine.SetState<BootState>();
+        Debug.Log("新游戏开始！");
     }
 
     // ==================== 公共接口（供状态机和外部调用） ====================

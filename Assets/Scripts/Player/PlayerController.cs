@@ -195,6 +195,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+
+        if (Time.timeScale == 0f) return;
         // --- ½»»¥¼ì²â£¨E¼üÊ°È¡/»¥¶¯£© ---
         bool hasValidTarget = RaycastInteractable(out RaycastHit hit, out Outline outline, out IInteractable interactable);
         UpdateOutline(outline);

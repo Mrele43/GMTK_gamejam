@@ -928,11 +928,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e841481778a547941812be712bbcfdfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  canvasGroup: {fileID: 0}
-  newGameButton: {fileID: 3773911465335038159}
+  canvasGroup: {fileID: 1550523786189767409}
   continueButton: {fileID: 6836011102005596728}
-  settingButton: {fileID: 3481475790424446789}
-  leaveButton: {fileID: 1394868902093439591}
+  newGameButton: {fileID: 3773911465335038159}
+  quitButton: {fileID: 0}
 --- !u!225 &1550523786189767409
 CanvasGroup:
   m_ObjectHideFlags: 0

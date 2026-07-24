@@ -6,40 +6,46 @@ using UnityEngine.UI;
 
 public class PausePanel : basePlane
 {
-    [SerializeField] private Button newGameButton;
+    [Header("按钮")]
     [SerializeField] private Button continueButton;
-    [SerializeField] private Button settingButton;
-    [SerializeField] private Button leaveButton;
+    [SerializeField] private Button newGameButton;
+    [SerializeField] private Button quitButton;
+    GameManager gm;
 
     protected override void Init()
     {
-
-        // 新游戏：重启场景
-        newGameButton.onClick.AddListener(() =>
-        {
-            PauseManager.Instance.RestartGame();
-        });
-
-        // 继续游戏：关闭暂停、恢复时间
-        continueButton.onClick.AddListener(() =>
-        {
-            PauseManager.Instance.ResumeGame();
-        });
-
-        // 设置面板
-        settingButton.onClick.AddListener(() =>
-        {
-            UIManager.Instance.ShowPanel<SettingPanel>();
-        });
-
-        // 退出游戏
-        leaveButton.onClick.AddListener(() =>
-        {
-            PauseManager.Instance.QuitGame();
-        });
-
-
+        gm = FindObjectOfType<GameManager>();
+        if (continueButton) continueButton.onClick.AddListener(OnContinueClicked);
+        if (newGameButton) newGameButton.onClick.AddListener(OnNewGameClicked);
+        if (quitButton) quitButton.onClick.AddListener(OnQuitClicked);
     }
 
+
+    private void OnContinueClicked()
+    {
+        gm?.TogglePause(false);
+    }
+
+    private void OnNewGameClicked()
+    {
+        gm?.RestartGame();
+    }
+
+    private void OnQuitClicked()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    public override void ShwoMe()
+    {
+        base.ShwoMe();
+        // 默认选中继续按钮
+        if (continueButton) continueButton.Select();
+
+    }
 
 }
